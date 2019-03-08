@@ -768,12 +768,12 @@ void StatefulWriter::check_acked_status()
         if(mp_listener != nullptr)
         {
             std::vector<CacheChange_t*> all_acked_changes;
-            for(SequenceNumber_t current_seq = get_seq_num_min(); current_seq <= min_low_mark; ++current_seq)
             {
-                for(std::vector<CacheChange_t*>::iterator cit = mp_history->changesBegin();
-                        cit != mp_history->changesEnd(); ++cit)
+                std::lock_guard<std::recursive_mutex> guard(*mp_history->getMutex());
+                SequenceNumber_t min_sequence = get_seq_num_min();
+                for (auto cit = mp_history->changesBegin(); cit != mp_history->changesEnd(); ++cit)
                 {
-                    if((*cit)->sequenceNumber == current_seq)
+                    if ((*cit)->sequenceNumber >= min_sequence || (*cit)->sequenceNumber <= min_low_mark)
                     {
                         all_acked_changes.push_back(*cit);
                     }
